@@ -1,0 +1,127 @@
+{
+  "n_buildings": 1651,
+  "TotalGHGEmissions": {
+    "label": "CO2 emissions",
+    "n": 1642,
+    "target_skew_raw": 14.119513510999134,
+    "scores": {
+      "Dummy (mean)": {
+        "r2": -0.32852583568332044,
+        "r2_std": 0.3257693458741436,
+        "rmse": 1.4860987665636645
+      },
+      "Linear": {
+        "r2": -0.6206701045675459,
+        "r2_std": 1.067928624299363,
+        "rmse": 1.5999553904927257
+      },
+      "Ridge": {
+        "r2": -0.6197400496074923,
+        "r2_std": 1.0664720344809593,
+        "rmse": 1.5995812034747037
+      },
+      "Lasso": {
+        "r2": -0.5882584338700837,
+        "r2_std": 1.0017948641600283,
+        "rmse": 1.5884071665167852
+      },
+      "Random Forest": {
+        "r2": 0.20593787855522255,
+        "r2_std": 0.06076420451525845,
+        "rmse": 1.1555763602348164
+      },
+      "Gradient Boosting": {
+        "r2": 0.25410674974631675,
+        "r2_std": 0.05249269399063764,
+        "rmse": 1.120298155847519
+      }
+    },
+    "best_model": "Gradient Boosting",
+    "best_r2": 0.25410674974631675,
+    "energystar_ablation": {
+      "r2_without_energystar": 0.25410674974631675,
+      "r2_with_energystar": 0.3068051088451237,
+      "delta": 0.052698359098806935
+    }
+  },
+  "SiteEnergyUse(kBtu)": {
+    "label": "Energy use",
+    "n": 1633,
+    "target_skew_raw": 17.91907276153433,
+    "scores": {
+      "Dummy (mean)": {
+        "r2": -0.5634401555254314,
+        "r2_std": 0.4301869040632116,
+        "rmse": 1.3667039243367443
+      },
+      "Linear": {
+        "r2": -0.5694877378257787,
+        "r2_std": 0.974279419390045,
+        "rmse": 1.3521494481466552
+      },
+      "Ridge": {
+        "r2": -0.5693693223879804,
+        "r2_std": 0.9738719258107108,
+        "rmse": 1.3521183902113816
+      },
+      "Lasso": {
+        "r2": -0.5450543557008152,
+        "r2_std": 0.9252031357894661,
+        "rmse": 1.343890397161315
+      },
+      "Random Forest": {
+        "r2": 0.4028328236577421,
+        "r2_std": 0.1330959102348545,
+        "rmse": 0.8438225502957902
+      },
+      "Gradient Boosting": {
+        "r2": 0.4570918331446503,
+        "r2_std": 0.12943288493601127,
+        "rmse": 0.8033241477617892
+      }
+    },
+    "best_model": "Gradient Boosting",
+    "best_r2": 0.4570918331446503,
+    "energystar_ablation": {
+      "r2_without_energystar": 0.4570918331446503,
+      "r2_with_energystar": 0.5301475146711113,
+      "delta": 0.07305568152646102
+    }
+  },
+  "shap_energy": {
+    "feature_ranking": [
+      {
+        "feature": "PropertyGFATotal",
+        "mean_abs_shap": 0.637
+      },
+      {
+        "feature": "LargestPropertyUseTypeGFA",
+        "mean_abs_shap": 0.1344
+      },
+      {
+        "feature": "YearBuilt",
+        "mean_abs_shap": 0.0791
+      },
+      {
+        "feature": "NumberofFloors",
+        "mean_abs_shap": 0.0758
+      },
+      {
+        "feature": "NumberofBuildings",
+        "mean_abs_shap": 0.0364
+      },
+      {
+        "feature": "PropertyGFAParking",
+        "mean_abs_shap": 0.0161
+      }
+    ]
+  },
+  "map": {
+    "n_mapped": 1633,
+    "top_neighborhoods_by_median_energy": {
+      "DOWNTOWN": 5242842,
+      "Central": 4386996,
+      "LAKE UNION": 4342597
+    }
+  }
+}
