@@ -8,7 +8,7 @@
 
 > Predicting the **energy use** and **CO₂ emissions** of Seattle's non-residential buildings from their physical characteristics (size, age, floors, use) — so the city can estimate consumption without an expensive on-site audit. Energy is predictable (**R² 0.46**); CO₂ stays harder (**R² 0.25**) for a concrete reason — emissions depend on the *energy mix* (gas vs electricity), which physical features can't see. The project answers the city's real question (**is the ENERGYSTARScore worth collecting?**), explains its predictions with **SHAP**, and puts every building back **on the map**. Built in 2022, re-run in 2026 with leakage-free features and log-transformed targets.
 
-**Stack:** `scikit-learn` · `SHAP` · `pandas` · `Gradient Boosting` · `Random Forest` · `Ridge / Lasso` · `Python`  |  **Status:** completed  |  **Year:** 2022 · revisited 2026
+**Stack:** `scikit-learn` · `SHAP` · `pandas` · `Gradient Boosting` · `SVR / Kernel Ridge` · `Random Forest` · `GridSearchCV` · `Python`  |  **Status:** completed  |  **Year:** 2022 · revisited 2026
 
 > 🇫🇷 *Version française plus bas — [aller à la version FR](#-version-française).*
 
@@ -25,7 +25,7 @@ Two regression targets, `TotalGHGEmissions` (CO₂) and `SiteEnergyUse(kBtu)`, b
 - **No target leakage.** Energy/emission columns (Electricity, NaturalGas, EUI, SteamUse) are *measurements of the target* — using them to predict energy is cheating. They're explicitly removed; only physical building features remain.
 - **Log-transform the targets.** Both are extremely right-skewed (skew 14 for CO₂, 18 for energy — a few huge buildings dominate), so a `log1p` is applied before modelling.
 
-Six models are compared with **5-fold cross-validation** (R² + RMSE): a Dummy baseline, Linear, Ridge, Lasso, Random Forest and Gradient Boosting. The ENERGYSTARScore question is answered with a direct **ablation** (best model with vs without it).
+**Eight models across four families** are compared with **5-fold cross-validation** (R² + RMSE): Dummy baseline, Linear, Ridge, Lasso (linear/regularised), **SVR and Kernel Ridge** (RBF kernels), Random Forest and Gradient Boosting (ensembles) — plus a light **GridSearch** per family to confirm the ranking isn't a default-settings artefact. The ENERGYSTARScore question is answered with a direct **ablation** (best model with vs without it).
 
 ## 3. Pipeline / Schema
 
@@ -53,24 +53,31 @@ flowchart LR
 
 **Model comparison (5-fold CV R² on the log target):**
 
-| Model | CO₂ — R² | CO₂ — RMSE | Energy — R² | Energy — RMSE |
-|---|--:|--:|--:|--:|
-| Dummy (mean) | −0.33 | 1.49 | −0.56 | 1.37 |
-| Linear | −0.62 | 1.60 | −0.57 | 1.35 |
-| Ridge | −0.62 | 1.60 | −0.57 | 1.35 |
-| Lasso | −0.59 | 1.59 | −0.55 | 1.34 |
-| Random Forest | 0.21 | 1.16 | 0.40 | 0.84 |
-| **Gradient Boosting** | **0.25** | **1.12** | **0.46** | **0.80** |
+Eight models across four families — linear, regularised, **kernel**, ensemble — on equal footing:
 
-*(RMSE on the log1p target; lower is better.)*
+| Family | Model | CO₂ — R² | Energy — R² | Energy — RMSE |
+|---|---|--:|--:|--:|
+| baseline | Dummy (mean) | −0.33 | −0.56 | 1.37 |
+| linear | Linear | −0.62 | −0.57 | 1.35 |
+| regularised | Ridge | −0.62 | −0.57 | 1.35 |
+| regularised | Lasso | −0.59 | −0.55 | 1.34 |
+| kernel | SVR (RBF) | 0.20 | 0.41 | 0.84 |
+| kernel | Kernel Ridge (RBF) | −0.16 | −3.63 | 2.15 |
+| ensemble | Random Forest | 0.21 | 0.40 | 0.84 |
+| ensemble | **Gradient Boosting** | **0.25** | **0.46** | **0.80** |
+
+*(5-fold CV; RMSE on the log1p target, lower is better.)*
+
+**Light GridSearch per family (energy target), to prove it isn't default-settings luck:** Ridge R² −0.53 (`α=100`), SVR R² 0.41 (`C=10`), Kernel Ridge R² −1.35 (`α=0.1`), Gradient Boosting R² 0.46 (`n_estimators=100, depth=3`). Tuning doesn't change the verdict — the ensemble wins, and the RBF kernel either lands second (SVR) or fails outright (Kernel Ridge).
 
 ![CO₂ model comparison](docs/figures/models_co2_emissions.png)
 ![Energy model comparison](docs/figures/models_energy_use.png)
 
-Two things jump out, and both are honest:
+Three things jump out, all honest:
 
-- **Linear models fail — worse than the mean.** Ridge/Lasso land at R² ≈ −0.6: the relationship is non-linear, and forcing a line is worse than predicting a constant. **Tree ensembles are the unlock**: Gradient Boosting reaches R² 0.25 (CO₂) and **0.46 (energy)**. The 2022 instinct to move past linear regression was right.
-- **Energy is more predictable than CO₂** (0.46 vs 0.25). That makes physical sense: energy use scales with building size and age, but CO₂ depends on the *energy mix* (gas vs electricity vs steam), which the physical features don't capture.
+- **The model family is the whole game.** Linear and regularised models score *worse than the mean* (R² ≈ −0.6): forcing a line on a non-linear relationship is worse than predicting a constant. The signal only appears with **non-linear** models — tree ensembles (GBR **0.46**, RF 0.40) and the RBF **SVR** (0.41). Spanning linear → regularised → kernel → ensemble is what makes the point provable rather than asserted.
+- **Kernels cut both ways.** SVR (RBF) is a strong second; Kernel Ridge (RBF) *collapses* (R² −3.6, and still −1.35 tuned). Same kernel trick, opposite outcome — a reminder that "non-linear" isn't a guarantee, and that benchmarking the whole family beats trusting one model.
+- **Energy is more predictable than CO₂** (0.46 vs 0.25). Physical sense: energy scales with building size and age, but CO₂ depends on the *energy mix* (gas vs electricity vs steam), which the physical features can't capture.
 
 **Is the ENERGYSTARScore worth collecting? — a measured answer:**
 
@@ -123,7 +130,8 @@ A leakage-free regression that predicts Seattle building energy use at **R² 0.4
 - [x] **Map** buildings by energy use to locate the consumption. *(done — Downtown/Lake Union corridor)*
 - [ ] **Climate feature** — add Seattle Heating/Cooling Degree Days (public weather data) to test whether climate explains part of the energy/CO₂ gap. *~2h, external-data dependency.* The natural next step toward a city-climate consumption map.
 - [ ] Engineer non-leaking proxies for the energy mix (e.g. heating-system type) to lift CO₂.
-- [ ] GridSearch / Optuna on the Gradient Boosting and Random Forest. *~1h.*
+- [x] **GridSearch** per model family. *(done — tuning confirms the ensemble wins)*
+- [ ] Push the search further with Optuna + a wider grid on the ensembles.
 - [ ] One-hot the building use-type categories (currently numeric features only).
 - [ ] Multi-year data for temporal validation.
 
