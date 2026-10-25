@@ -68,9 +68,15 @@ def fig_scores(scores: dict, target_name: str, out: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 4))
     bars = ax.barh(names, r2, color="#36c")
     bars[int(np.argmax(r2))].set_color("#2a7")
-    ax.set_xlabel("5-fold CV R² (log target)")
-    ax.set_title(f"{target_name}: model comparison")
+    # annotate each bar with its R² value
+    for bar, v in zip(bars, r2, strict=False):
+        x = v + (0.015 if v >= 0 else -0.015)
+        ax.text(x, bar.get_y() + bar.get_height() / 2, f"{v:.2f}",
+                va="center", ha="left" if v >= 0 else "right", fontsize=9)
+    ax.set_xlabel("5-fold CV R² (log target) — higher is better")
+    ax.set_title(f"{target_name}: model comparison (Gradient Boosting wins)")
     ax.axvline(0, color="k", lw=0.5)
+    ax.margins(x=0.12)
     fig.tight_layout()
     fig.savefig(out / f"models_{target_name.lower().replace(' ', '_')}.png", dpi=110)
     plt.close(fig)
@@ -144,10 +150,18 @@ def fig_map(df: pd.DataFrame, out: Path) -> dict:
     fig, ax = plt.subplots(figsize=(7, 8))
     sc = ax.scatter(d["Longitude"], d["Latitude"], c=d["log_energy"],
                     cmap="inferno", s=14, alpha=0.75, edgecolor="none")
+    # annotate the two high-consumption neighbourhoods the analysis calls out
+    for name, lat, lng in [("Downtown", 47.606, -122.335), ("Lake Union", 47.637, -122.335)]:
+        ax.annotate(name, (lng, lat), color="#111", fontsize=9, fontweight="bold",
+                    ha="center",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.7))
     ax.set_title(f"Seattle non-residential buildings by energy use (n={len(d):,})")
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_aspect(1.4)
+    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    ax.tick_params(labelsize=8)
     fig.colorbar(sc, ax=ax, label="log site energy use (kBtu)", shrink=0.6)
     fig.tight_layout()
     fig.savefig(out / "map_energy_seattle.png", dpi=120)

@@ -46,19 +46,23 @@ flowchart LR
 - Log-transformed both skewed targets.
 - Ran a **5-fold CV model sweep** on CO₂ and on energy use, reporting R² (mean ± std) and RMSE.
 - Ran an **ablation** to measure the marginal value of the ENERGYSTARScore.
+- Explained the winning model with **SHAP** (which features drive the prediction).
+- **Mapped** every building by energy use from its lat/lng to locate consumption.
 
 ## 5. Results
 
 **Model comparison (5-fold CV R² on the log target):**
 
-| Model | CO₂ — R² | Energy — R² |
-|---|--:|--:|
-| Dummy (mean) | −0.33 | −0.56 |
-| Linear | −0.62 | −0.57 |
-| Ridge | −0.62 | −0.57 |
-| Lasso | −0.59 | −0.55 |
-| Random Forest | 0.21 | 0.40 |
-| **Gradient Boosting** | **0.25** | **0.46** |
+| Model | CO₂ — R² | CO₂ — RMSE | Energy — R² | Energy — RMSE |
+|---|--:|--:|--:|--:|
+| Dummy (mean) | −0.33 | 1.49 | −0.56 | 1.37 |
+| Linear | −0.62 | 1.60 | −0.57 | 1.35 |
+| Ridge | −0.62 | 1.60 | −0.57 | 1.35 |
+| Lasso | −0.59 | 1.59 | −0.55 | 1.34 |
+| Random Forest | 0.21 | 1.16 | 0.40 | 0.84 |
+| **Gradient Boosting** | **0.25** | **1.12** | **0.46** | **0.80** |
+
+*(RMSE on the log1p target; lower is better.)*
 
 ![CO₂ model comparison](docs/figures/models_co2_emissions.png)
 ![Energy model comparison](docs/figures/models_energy_use.png)
@@ -111,6 +115,7 @@ A leakage-free regression that predicts Seattle building energy use at **R² 0.4
 - **CO₂ needs the energy mix** (gas/electricity/steam shares) — deliberately excluded here as leakage-adjacent, but a cleaned version could be engineered.
 - **No hyperparameter tuning** in this clean re-run (defaults + light choices); a GridSearch would lift the ensembles a few points.
 - **Single year (2016)** — no temporal validation.
+- **SHAP is computed on the full in-sample fit** — it explains *this* model's behaviour, not out-of-sample generalisation (the R² figures above are the cross-validated numbers).
 
 ## 10. Improvements & TODO Next
 
